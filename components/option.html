@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container" style="margin-top:30px;">
+        <div class="options">
+            <div class="row">
+                <div class="col-sm">
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Symbol:</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control symbol">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Expiration:</label>
+                        <div class="col-sm-8">
+                            <input type="date" class="form-control exp" id="dateField">
+                        </div>
+                    </div>
+                </div>
+                <!-- <div class="col-sm">
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label">Strike:</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control strike">
+                        </div>
+                    </div>
+                </div> -->
+                <div class="col-sm">
+                    <button type="button" class="btn btn-success load-data">
+                        Result
+                    </button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="text-right col-12">
+                    <button class="btn btn-primary export-btn ">Export Excel</button>
+                </div>
+            </div>
+
+
+        </div>
+        <table id="res-table" class="table">
+            <tbody></tbody>
+        </table>
+
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js" integrity="sha512-3P8rXCuGJdNZOnUx/03c1jOTnMn3rP63nBip5gOP2qmUh5YAdVAvFZ1E+QLZZbC1rtMrQb+mah3AfYW11RUrWA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/table2excel@1.0.4/dist/table2excel.min.js"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/jquery-table2excel@1.1.1/dist/jquery.table2excel.min.js"></script>
+    <!-- <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="js/jquery.table2excel.js"></script> -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var today = new Date().toISOString().split('T')[0];
+            document.getElementById("dateField").setAttribute('min', today);
+        });
+
+        $('.export-btn').hide()
+        var insertData = function (header, body, id) {
+            
+            header.splice(-2, 2);
+
+            let cnt = header.length;
+            let html = `<thead>
+                            <tr>
+                                <th colspan=${cnt}>${id}</th>
+                            </tr>
+                            <tr>`;
+            header.map(item => {
+                html += `<th>${item}</th>`;
+            })
+            html += `</tr></thead>`;
+
+            // var html = `
+            //     <thead>
+            //         <tr>
+            //             <th>Strike</th>
+            //             <th>Moneyness</th>
+            //             <th>Bid</th>
+            //             <th>Midpoint</th>
+            //             <th>Ask</th>
+            //             <th>Last</th>
+            //             <th>Change</th>
+            //             <th>%Chg</th>
+            //             <th>Volume</th>
+            //             <th>Open Int</th>
+            //             <th>Vol/OI</th>
+            //             <th>IV</th>
+            //             <th>Time</th>
+            //         </tr>
+            //     </thead>
+            //     `;
+
+            // data.map(data => {
+            //     var date = new Date(data.lastTradeDate * 1000);
+            //     html += `<tr>`;
+            //     html += `<td>${data.strike}</td>`;
+            //     html += `<td>-</td>`;
+            //     html += `<td>${data.bid}</td>`;
+            //     html += `<td>${Math.round((data.bid + data.ask) * 100) / 200}</td>`;
+            //     html += `<td>${data.ask}</td>`;
+            //     html += `<td>${data.lastPrice}</td>`;
+            //     html += `<td class=${data.change < 0 ? 'text-danger' : 'text-success'}>${data.change}</td>`;
+            //     html += `<td class=${data.percentChange < 0 ? 'text-danger' : 'text-success'}>${Math.round(data.percentChange * 1000) / 100}%</td>`;
+            //     html += `<td>${data.volume}</td>`;
+            //     html += `<td>${data.openInterest}</td>`;
+            //     html += `<td>${data.openInterest == 0 ? 0 : Math.round(data.volume * 100 / data.openInterest) / 100}</td>`;
+            //     html += `<td>${Math.round(data.impliedVolatility * 1000) / 10}%</td>`;
+            //     html += `<td>${date.getFullYear()}/${date.getMonth()}/${date.getDate()}</td>`;
+            //     html += `</tr>`;
+            // })
+            html += `<tbody>`;
+            body.map(item => {
+                html += `<tr>`;
+                item.splice(-1, 1);
+                item.map(i => {
+                    html += `<td>${i}</td>`;
+                })
+                html += `</tr>`;
+            })
+            html += `</tbody>`;
+            return html;
+        }
+        $(".load-data").click(function () {
+            $('.export-btn').hide()
+            let symbol = $('.symbol').val()
+            let exp = $('.exp').val()
+            // let strike = $('.strike').val()
+
+            console.log(symbol, exp)
+            $(`#res-table tbody`).html('loading...')
+
+            const expiration = `${exp}-w`;  
+
+            const settings = {
+                // "url": `https://live-stock-market.p.rapidapi.com/yahoo-finance/v1/options?symbol=${symbol}`,
+                "url": `/get_options`,
+                "data": {
+                    url: `https://www.barchart.com/stocks/quotes/${symbol}/options?expiration=${expiration}`
+                },
+                "method": "GET",
+            };
+
+            $.ajax(settings).done(function (data) {
+                $('.export-btn').show()
+                let html = "";
+                let keys = ['Calls', 'Puts'];
+                data.map((item, index) => {
+                    html += insertData(item.header, item.body, keys[index])
+                })
+                // let calls = data.data.optionChain.result[0].options[0].calls
+                // let puts = data.data.optionChain.result[0].options[0].puts
+                // html += insertData(calls, 'Calls')
+                // html += insertData(puts, 'Puts')
+                $(`#res-table`).html(html)
+            });
+            // $.getJSON("assets/data/data.json", function (data) {
+            //     let html = ""
+            //     let calls = data.data.optionChain.result[0].options[0].calls
+            //     let puts = data.data.optionChain.result[0].options[0].puts
+            //     html += insertData(calls, 'Calls')
+            //     html += insertData(puts, 'Puts')
+            //     $(`#res-table tbody`).html(html)
+            // }).fail(function () {
+            //     console.log("An error has occurred.");
+            // });
+        })
+        
+        
+        $('.export-btn').click(function () {
+
+            let symbol = $('.symbol').val()
+            let exp = $('.exp').val()
+            const expiration = `${exp}-w`;  
+
+            $("#res-table").table2excel({
+                exclude: ".noExl",
+                name: "Sheet0",
+                filename: `${symbol}-${expiration}.xls`,
+                exclude_img: true,
+                exclude_links: true,
+                exclude_inputs: true,
+                preserveColors: true
+            });
+        })
+    </script>
+</body>
+
+</html>
